@@ -26,77 +26,45 @@ export const addToCart = async (req, res) => {
             });
         }
 
-        // Validate and convert productId
-        const numericProductId = Number(productId);
-        if (isNaN(numericProductId)) {
-            console.log('Invalid productId:', productId);
-            return res.status(400).json({
-                status: false,
-                message: 'Invalid product ID format'
-            });
-        }
+        // Create new cart item
+        const newCartItem = new ShoppingCartModel({
+            userId,
+            productId,
+            title,
+            price,
+            imageUrl,
+            quantity
+        });
 
-        // Convert and validate price
-        const numericPrice = typeof price === 'string' ? parseFloat(price) : Number(price);
-        if (isNaN(numericPrice)) {
-            console.log('Invalid price value:', price);
-            return res.status(400).json({
-                status: false,
-                message: 'Invalid price format'
-            });
-        }
-
-        // Prepare the cart item with validated data
-        const cartItem = {
-            productId: numericProductId,
-            title: String(title).trim(),
-            description: String(description).trim(),
-            price: numericPrice,
-            brand: String(brand).trim()
-        };
-
-        console.log('Attempting to create cart item:', cartItem);
-
-        // Check if MongoDB is connected
-        if (mongoose.connection.readyState !== 1) {
-            throw new Error('Database connection is not ready');
-        }
-
-        const shoppingCart = await ShoppingCartModel.create(cartItem);
-        console.log('Successfully created cart item:', shoppingCart);
+        await newCartItem.save();
 
         res.status(200).json({
             status: true,
             message: 'Product added to cart successfully',
-            item: shoppingCart
+            item: newCartItem
         });
     } catch (error) {
-        console.error("Cart addition error:", {
-            message: error.message,
-            code: error.code,
-            name: error.name,
-            stack: error.stack
-        });
-
-        // Send a more informative error response
+        console.error("Cart addition error:", error);
         res.status(500).json({
             status: false,
             message: 'Failed to add item to cart',
-            error: error.message,
-            details: error.code === 11000 ? 'Duplicate item' : 'Database error'
+            error: error.message
         });
-
     }
 }
 
 export const getCart = async (req, res) => {
     try {
-        // Check if MongoDB is connected
-        if (mongoose.connection.readyState !== 1) {
-            throw new Error('Database connection is not ready');
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                status: false,
+                message: "User ID is required"
+            });
         }
 
-        const cart = await ShoppingCartModel.find();
+        const cart = await ShoppingCartModel.find({ userId });
 
         if (!cart || cart.length === 0) {
             return res.status(200).json({
@@ -113,12 +81,7 @@ export const getCart = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Cart retrieval error:", {
-            message: error.message,
-            code: error.code,
-            name: error.name,
-            stack: error.stack
-        });
+        console.error("Cart retrieval error:", error);
         res.status(500).json({
             status: false,
             message: 'Failed to retrieve cart',
@@ -126,37 +89,23 @@ export const getCart = async (req, res) => {
         });
     }
 }
+
 export const deleteFromCart = async (req, res) => {
     try {
-        // Check if MongoDB is connected
-        if (mongoose.connection.readyState !== 1) {
-            throw new Error('Database connection is not ready');
-        }
+        const { userId, productId } = req.params;
 
-        const { id } = req.params;
-        console.log('Product ID to delete:', id);
-
-        // Check if ID is present
-        if (!id) {
+        if (!userId || !productId) {
             return res.status(400).json({
                 status: false,
-                message: "Product ID is required"
+                message: "User ID and Product ID are required"
             });
         }
 
-        // Convert and validate ID
-        const productId = Number(id);
-        if (isNaN(productId)) {
-            return res.status(400).json({
-                status: false,
-                message: "Invalid product ID format"
-            });
-        }
+        const result = await ShoppingCartModel.deleteOne({
+            userId,
+            productId
+        });
 
-        // Perform deletion using deleteOne
-        const result = await ShoppingCartModel.deleteOne({ productId });
-
-        // Check if any document was deleted
         if (result.deletedCount === 0) {
             return res.status(404).json({
                 status: false,
@@ -164,22 +113,61 @@ export const deleteFromCart = async (req, res) => {
             });
         }
 
-        // Successful deletion
         res.status(200).json({
             status: true,
-            message: "Product successfully removed from cart",
-            deletedId: productId
+            message: "Product successfully removed from cart"
         });
     } catch (error) {
-        console.error("Cart deletion error:", {
-            message: error.message,
-            code: error.code,
-            name: error.name,
-            stack: error.stack
-        });
+        console.error("Cart deletion error:", error);
         res.status(500).json({
             status: false,
             message: 'Failed to remove item from cart',
+            error: error.message
+        });
+    }
+};
+
+export const updateQuantity = async (req, res) => {
+    try {
+        const { userId, productId } = req.params;
+        const { quantity } = req.body;
+
+        if (!userId || !productId) {
+            return res.status(400).json({
+                status: false,
+                message: "User ID and Product ID are required"
+            });
+        }
+
+        if (!quantity || isNaN(quantity) || quantity < 1) {
+            return res.status(400).json({
+                status: false,
+                message: "Valid quantity is required"
+            });
+        }
+
+        const cartItem = await ShoppingCartModel.findOne({ userId, productId });
+
+        if (!cartItem) {
+            return res.status(404).json({
+                status: false,
+                message: "Item not found in cart"
+            });
+        }
+
+        cartItem.quantity = quantity;
+        await cartItem.save();
+
+        res.status(200).json({
+            status: true,
+            message: "Quantity updated successfully",
+            item: cartItem
+        });
+    } catch (error) {
+        console.error("Update quantity error:", error);
+        res.status(500).json({
+            status: false,
+            message: 'Failed to update item quantity',
             error: error.message
         });
     }

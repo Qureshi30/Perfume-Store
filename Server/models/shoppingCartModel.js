@@ -17,8 +17,7 @@ const ShoppingCartSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        trim: true,
-        required: true
+        trim: true
     },
     price: {
         type: Number,
@@ -26,17 +25,26 @@ const ShoppingCartSchema = new mongoose.Schema({
     },
     brand: {
         type: String,
-        trim: true,
-        required: true
+        trim: true
     },
     imageUrl: {
-        type: String,
-        required: true
+        type: String
     },
     altText: {
-        type: String,
-        required: true
+        type: String
+    },
+    quantity: {
+        type: Number,
+        default: 1,
+        min: 1
+    },
+    hasImage: {
+        type: Boolean,
+        default: false
     }
-})
+});
+
+// Create a compound index for faster lookups
+ShoppingCartSchema.index({ userId: 1, productId: 1 }, { unique: true });
 
 export default mongoose.model('shoppingcart', ShoppingCartSchema);
