@@ -7,7 +7,7 @@ export const addToCart = async (req, res) => {
 
         if (!userId || !productId || !title || !price) {
             return res.status(400).json({
-                status: false,
+                success: false,
                 message: "Missing required parameters"
             });
         }
@@ -39,14 +39,14 @@ export const addToCart = async (req, res) => {
         await newCartItem.save();
 
         res.status(200).json({
-            status: true,
+            success: true,
             message: 'Product added to cart successfully',
             item: newCartItem
         });
     } catch (error) {
         console.error("Cart addition error:", error);
         res.status(500).json({
-            status: false,
+            success: false,
             message: 'Failed to add item to cart',
             error: error.message
         });
@@ -59,7 +59,7 @@ export const getCart = async (req, res) => {
 
         if (!userId) {
             return res.status(400).json({
-                status: false,
+                success: false,
                 message: "User ID is required"
             });
         }
@@ -68,14 +68,14 @@ export const getCart = async (req, res) => {
 
         if (!cart || cart.length === 0) {
             return res.status(200).json({
-                status: true,
+                success: true,
                 message: 'Cart is empty',
                 cart: []
             });
         }
 
         res.status(200).json({
-            status: true,
+            success: true,
             message: "Cart successfully retrieved",
             cart
         });
@@ -83,7 +83,7 @@ export const getCart = async (req, res) => {
     } catch (error) {
         console.error("Cart retrieval error:", error);
         res.status(500).json({
-            status: false,
+            success: false,
             message: 'Failed to retrieve cart',
             error: error.message
         });
@@ -96,7 +96,7 @@ export const deleteFromCart = async (req, res) => {
 
         if (!userId || !productId) {
             return res.status(400).json({
-                status: false,
+                success: false,
                 message: "User ID and Product ID are required"
             });
         }
@@ -108,19 +108,19 @@ export const deleteFromCart = async (req, res) => {
 
         if (result.deletedCount === 0) {
             return res.status(404).json({
-                status: false,
+                success: false,
                 message: "Product not found in cart"
             });
         }
 
         res.status(200).json({
-            status: true,
+            success: true,
             message: "Product successfully removed from cart"
         });
     } catch (error) {
         console.error("Cart deletion error:", error);
         res.status(500).json({
-            status: false,
+            success: false,
             message: 'Failed to remove item from cart',
             error: error.message
         });
@@ -134,14 +134,14 @@ export const updateQuantity = async (req, res) => {
 
         if (!userId || !productId) {
             return res.status(400).json({
-                status: false,
+                success: false,
                 message: "User ID and Product ID are required"
             });
         }
 
         if (!quantity || isNaN(quantity) || quantity < 1) {
             return res.status(400).json({
-                status: false,
+                success: false,
                 message: "Valid quantity is required"
             });
         }
@@ -150,7 +150,7 @@ export const updateQuantity = async (req, res) => {
 
         if (!cartItem) {
             return res.status(404).json({
-                status: false,
+                success: false,
                 message: "Item not found in cart"
             });
         }
@@ -159,14 +159,14 @@ export const updateQuantity = async (req, res) => {
         await cartItem.save();
 
         res.status(200).json({
-            status: true,
+            success: true,
             message: "Quantity updated successfully",
             item: cartItem
         });
     } catch (error) {
         console.error("Update quantity error:", error);
         res.status(500).json({
-            status: false,
+            success: false,
             message: 'Failed to update item quantity',
             error: error.message
         });

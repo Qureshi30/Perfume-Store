@@ -57,35 +57,25 @@ export const CartProvider = ({ children }) => {
             // Get auth token
             const token = await getToken();
 
-            // Create FormData to handle file upload
-            const formData = new FormData();
-            formData.append('userId', user.id);
-            formData.append('productId', product.productId || product._id);
-            formData.append('title', product.title || product.productName);
-            formData.append('price', Number(product.price));
-            formData.append('description', product.description || '');
-            formData.append('brand', product.brand || '');
-            formData.append('altText', product.altText || product.title || product.productName);
-            formData.append('quantity', product.quantity || 1);
-
-            // Append image if provided
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
-
-            console.log('Adding to cart:', {
+            // Create the cart data object
+            const cartData = {
                 userId: user.id,
-                productId: product.productId || product._id,
+                productId: Number(product.productId || product._id),
                 title: product.title || product.productName,
-                price: Number(product.price)
-            });
+                price: Number(product.price),
+                imageUrl: product.imageUrl || product.image || '', // Add imageUrl field
+                quantity: Number(product.quantity) || 1
+            };
+
+            console.log('Adding to cart:', cartData);
+            console.log('Product data received:', product);
 
             const response = await axios.post(
                 'http://localhost:5000/api/shopping-cart/add-to-cart',
-                formData,
+                cartData,
                 {
                     headers: {
-                        'Content-Type': 'multipart/form-data',
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     }
                 }
@@ -93,7 +83,7 @@ export const CartProvider = ({ children }) => {
 
             console.log('Add to cart response:', response.data);
 
-            if (response.data.status) {
+            if (response.data.success) {
                 await fetchCartItems(); // Refresh the cart
                 return response.data;
             } else {
