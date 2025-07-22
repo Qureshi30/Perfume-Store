@@ -4,6 +4,25 @@ import { CartContext } from '../CartContextProvider';
 const Cart = () => {
     const { cartItems, loading, error, quantities, removeFromCart, updateQuantity, getCartTotal } = useContext(CartContext);
 
+    // Helper function to get the correct image URL
+    const getImageUrl = (imageUrl) => {
+        if (!imageUrl) return '/images/placeholder-image.png';
+        
+        // If it's already a full URL (http/https), return as is
+        if (imageUrl.startsWith('http')) {
+            return imageUrl;
+        }
+        
+        // If it's a data URL (base64), return as is
+        if (imageUrl.startsWith('data:image')) {
+            return imageUrl;
+        }
+        
+        // For relative paths, construct the full URL pointing to backend server
+        const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/uploads/${imageUrl.replace(/^uploads[/\\]/, '')}`;
+        return `http://localhost:5000${cleanPath}`;
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -44,9 +63,13 @@ const Cart = () => {
                         <div className="flex items-center space-x-4">
                             {item.imageUrl && (
                                 <img
-                                    src={item.imageUrl}
+                                    src={getImageUrl(item.imageUrl)}
                                     alt={item.title}
                                     className="w-16 h-16 object-cover rounded"
+                                    onError={(e) => {
+                                        console.error('Image failed to load:', getImageUrl(item.imageUrl));
+                                        e.target.src = '/images/placeholder-image.png';
+                                    }}
                                 />
                             )}
                             <div>
