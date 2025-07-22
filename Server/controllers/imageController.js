@@ -1,21 +1,20 @@
 import ImageModel from '../models/imageModel.js';
 
-export const uploadImage = async (req, res) => {
+const uploadImage = async (req, res) => {
     try {
-        const { userId, productId, imageBase64 } = req.body;
-
-        if (!userId || !imageBase64) {
+        if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: 'Missing required fields: userId and imageBase64 are required'
+                message: 'No file uploaded'
             });
         }
 
-        // Validate the base64 string
-        if (!imageBase64.startsWith('data:image/')) {
+        const { userId, productId } = req.body;
+
+        if (!userId) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid image format'
+                message: 'Missing required field: userId'
             });
         }
 
@@ -23,7 +22,10 @@ export const uploadImage = async (req, res) => {
         const newImage = new ImageModel({
             userId,
             productId: productId || null,
-            imageBase64
+            filename: req.file.filename,
+            filePath: `/uploads/${req.file.filename}`,
+            mimetype: req.file.mimetype,
+            size: req.file.size
         });
 
         await newImage.save();
@@ -31,7 +33,11 @@ export const uploadImage = async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'Image uploaded successfully',
-            imageId: newImage._id
+            image: {
+                imageId: newImage._id,
+                filePath: newImage.filePath,
+                filename: newImage.filename
+            }
         });
     } catch (error) {
         console.error('Error uploading image:', error);
@@ -43,7 +49,7 @@ export const uploadImage = async (req, res) => {
     }
 };
 
-export const getImage = async (req, res) => {
+const getImage = async (req, res) => {
     try {
         const { userId, productId } = req.query;
 
@@ -70,8 +76,11 @@ export const getImage = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            imageBase64: image.imageBase64,
-            imageId: image._id
+            image: {
+                imageId: image._id,
+                filePath: image.filePath,
+                filename: image.filename
+            }
         });
     } catch (error) {
         console.error('Error retrieving image:', error);
@@ -83,7 +92,7 @@ export const getImage = async (req, res) => {
     }
 };
 
-export const getImageByProductId = async (req, res) => {
+const getImageByProductId = async (req, res) => {
     try {
         const { productId } = req.params;
 
@@ -105,8 +114,11 @@ export const getImageByProductId = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            imageBase64: image.imageBase64,
-            imageId: image._id
+            image: {
+                imageId: image._id,
+                filePath: image.filePath,
+                filename: image.filename
+            }
         });
     } catch (error) {
         console.error('Error retrieving product image:', error);
@@ -117,3 +129,6 @@ export const getImageByProductId = async (req, res) => {
         });
     }
 };
+
+
+export { uploadImage, getImage, getImageByProductId };
