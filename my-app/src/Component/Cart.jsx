@@ -7,17 +7,17 @@ const Cart = () => {
     // Helper function to get the correct image URL
     const getImageUrl = (imageUrl) => {
         if (!imageUrl) return '/images/placeholder-image.png';
-        
+
         // If it's already a full URL (http/https), return as is
         if (imageUrl.startsWith('http')) {
             return imageUrl;
         }
-        
+
         // If it's a data URL (base64), return as is
         if (imageUrl.startsWith('data:image')) {
             return imageUrl;
         }
-        
+
         // For relative paths, construct the full URL pointing to backend server
         const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/uploads/${imageUrl.replace(/^uploads[/\\]/, '')}`;
         return `http://localhost:5000${cleanPath}`;
